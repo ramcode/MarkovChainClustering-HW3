@@ -69,51 +69,25 @@ public class MCLClustering {
     }
 
 
-
-    public void generateCLUFile ( double[][] transitionMatrix ) {
-
+    public void generateCLUFile(double[][] transitionMatrix) {
         try {
-
             Log logger = new Log("cluster.clu");
-
             int clusterCounter = 0;
-
-            for ( int i = 0; i < transitionMatrix.length; i++ ) {
-
-                for ( int j = 0; j < transitionMatrix.length; j++ ) {
-
-                    if ( transitionMatrix[i][j] != 0 ) {
-
+            for (int i = 0; i < transitionMatrix.length; i++) {
+                for (int j = 0; j < transitionMatrix.length; j++) {
+                    if (transitionMatrix[i][j] != 0) {
                         clusterCounter++;
                         break;
-
-
                     }
-
                 }
-
-                for ( int j = 0; j < transitionMatrix.length; j++ ) {
-
-                    if ( transitionMatrix[i][j] != 0 ) {
-
+                for (int j = 0; j < transitionMatrix.length; j++) {
+                    if (transitionMatrix[i][j] != 0) {
                         logger.log(String.valueOf(clusterCounter));
-
-
                     }
-
                 }
-
-
             }
-
-
-
-        } catch ( Exception e ) {
-
+        } catch (Exception e) {
             e.printStackTrace();
-
         }
-
     }
-
 }
