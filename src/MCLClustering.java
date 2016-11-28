@@ -81,6 +81,7 @@ public class MCLClustering {
     public void generateCLUFile(double[][] transitionMatrix) {
         try {
             Log logger = new Log("cluster.clu");
+            logger.log("*Vertices " + String.valueOf(transitionMatrix.length));
             int clusterCounter = 0;
             for (int i = 0; i < transitionMatrix.length; i++) {
                 for (int j = 0; j < transitionMatrix.length; j++) {
@@ -157,3 +158,4 @@ public class MCLClustering {
     }
 
 }
+
