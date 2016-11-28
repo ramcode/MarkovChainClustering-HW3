@@ -37,9 +37,9 @@ public class RunMCLClustering {
         }
         if (fileName == null || fileName.length() == 0) fileName = "attweb_net";
         System.out.println("Enter expansion parameter, e: ");
-        double e = sc.nextDouble();
+        int e = sc.nextInt();
         System.out.println("Enter inflation parameter, r: ");
-        double r = sc.nextDouble();
+        int r = sc.nextInt();
         String filePath = "data/"+fileName;
         MCLClustering mcl = new MCLClustering(filePath, e, r);
         mcl.runMCL(filePath);
