@@ -2,7 +2,9 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Stream;
 
 /**
@@ -12,14 +14,14 @@ public class MCLClustering {
 
     private String fileName;
     private double[][] transitionMatrix;
-    private double expansionParm;
+    private double expansionParam;
     private double inflationParam;
+    private Map<String, Integer> nodeMap;
 
     public MCLClustering(String fileName, double expansionParm, double inflationParam) throws Exception {
         this.fileName = fileName;
-        this.expansionParm = expansionParm;
+        this.expansionParam = expansionParm;
         this.inflationParam = inflationParam;
-        this.transitionMatrix = generateTransitionMatrix(fileName);
     }
 
 
@@ -27,29 +29,44 @@ public class MCLClustering {
         Path filePath = null;
         try {
             filePath = Paths.get(fileName);
-            Stream<String> genes = Files.lines(filePath, StandardCharsets.UTF_8);
-            List<String> geneData = Files.readAllLines(filePath, StandardCharsets.UTF_8);
-            /*int rows = geneData.size();
-            this.objectCount = rows;
-            int columns = geneData.get(0).split("\t").length;
-            clusterIndex = columns;
-            this.attributeCount = columns - 2;
-            dataMatrix = new double[rows][columns + 2];
+            Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
+            List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+            nodeMap = new HashMap<String, Integer>();
+            int rows = lines.size();
+            int nodeId = 0;
             for (int i = 0; i < rows; i++) {
-                String[] geneAttributes = geneData.get(i).split("\t");
-                for (int j = 0; j < columns - 1; j++) {
-                    if (j == 0) dataMatrix[i][j] = Double.parseDouble(geneAttributes[j]);
-                    else dataMatrix[i][j] = Double.parseDouble(geneAttributes[j + 1]);
+                String[] nodes = lines.get(i).split(" ");
+                if (!nodeMap.containsKey(nodes[0])) {
+                    nodeMap.put(nodes[0], nodeId++);
                 }
-                dataMatrix[i][columns - 1] = Double.parseDouble(geneAttributes[1]);
-                dataMatrix[i][clusterIndex] = 0;
-                dataMatrix[i][columns + 1] = 0;
-                this.visited = columns + 1;*/
+                if (!nodeMap.containsKey(nodes[1])) {
+                    nodeMap.put(nodes[1], nodeId++);
+                }
+            }
+            System.out.println(nodeMap);
+            this.transitionMatrix = new double[nodeMap.size()][nodeMap.size()];
+            for (int i = 0; i < rows; i++) {
+                String[] nodes = lines.get(i).split(" ");
+
+            }
+
         } catch (Exception ex) {
 
         }
 
-        return new double[10][];
+        return transitionMatrix;
     }
+
+    public void runMCL(String filePath) throws Exception {
+        double[][] matrix = generateTransitionMatrix(filePath);
+        this.transitionMatrix = matrix;
+        for (int i = 0; i < matrix.length; i++) {
+            System.out.println();
+            for (int j = 0; j < matrix.length; j++) {
+                System.out.print(matrix[i][j] + " ");
+            }
+        }
+    }
+
 
 }
