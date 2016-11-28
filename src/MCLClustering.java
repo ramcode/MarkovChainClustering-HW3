@@ -47,6 +47,10 @@ public class MCLClustering {
             this.transitionMatrix = new double[nodeMap.size()][nodeMap.size()];
             for (int i = 0; i < rows; i++) {
                 String[] nodes = lines.get(i).split(" ");
+                int rowIdx = nodeMap.get(nodes[0]);
+                int colIdx = nodeMap.get(nodes[1]);
+                transitionMatrix[rowIdx][colIdx] = 1;
+                transitionMatrix[colIdx][rowIdx] = 1;
             }
         } catch (Exception ex) {
         }
@@ -54,14 +58,22 @@ public class MCLClustering {
     }
 
     public void runMCL(String filePath) throws Exception {
-        double[][] matrix = generateTransitionMatrix(filePath);
-        this.transitionMatrix = matrix;
-        for (int i = 0; i < matrix.length; i++) {
-            System.out.println();
-            for (int j = 0; j < matrix.length; j++) {
-                System.out.print(matrix[i][j] + " ");
+        generateTransitionMatrix(filePath);
+
+    }
+
+    private void addSelfLoops(){
+        for(int i=0; i<transitionMatrix.length;i++){
+            for(int j=0; j<transitionMatrix.length;j++){
+                if(i==j){
+                    transitionMatrix[i][j] = 1;
+                }
             }
         }
+    }
+
+    private boolean checkConvergernce(){
+        return false;
     }
 
 
