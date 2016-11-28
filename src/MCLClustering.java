@@ -14,11 +14,12 @@ public class MCLClustering {
 
     private String fileName;
     private double[][] transitionMatrix;
-    private double expansionParam;
-    private double inflationParam;
+    private int expansionParam;
+    private int inflationParam;
     private Map<String, Integer> nodeMap;
 
-    public MCLClustering(String fileName, double expansionParm, double inflationParam) throws Exception {
+
+    public MCLClustering(String fileName, int expansionParm, int inflationParam) throws Exception {
         this.fileName = fileName;
         this.expansionParam = expansionParm;
         this.inflationParam = inflationParam;
@@ -98,4 +99,61 @@ public class MCLClustering {
             e.printStackTrace();
         }
     }
+
+    public double[][] expansion()
+    {
+        int matLen = transitionMatrix.length;
+        double[][] expandedMatrix = new double[matLen][matLen];
+
+        for(int e=expansionParam; e>1; e--)
+        {
+            for(int i=0;i<matLen;i++)
+            {
+                for(int j=0;j<matLen;j++)
+                {
+                    for(int k=0;k<matLen;k++)
+                    {
+                        expandedMatrix[i][j] += (transitionMatrix[i][k])*(transitionMatrix[k][j]);
+                    }
+                }
+            }
+        }
+
+        return expandedMatrix;
+    }
+
+
+    public double[][] inflation()
+    {
+        int matLen = transitionMatrix.length;
+        double[][] inflatedMatrix = new double[matLen][matLen];
+
+        for(int i=0;i<matLen;i++)
+        {
+            for(int j=0;j<matLen;j++)
+            {
+                inflatedMatrix[i][j]= Math.pow(transitionMatrix[i][j],inflationParam);
+            }
+        }
+
+        return inflatedMatrix;
+    }
+
+    public double[][] normalize(double[][] inMatrix)
+    {
+        int matLen = inMatrix.length;
+        double[][] normalizedMatrix = new double[matLen][matLen];
+
+        double[] colSum = new double[matLen];
+        for(int i=0;i<matLen;i++)
+        {
+            for(int j=0;j<matLen;j++)
+            {
+                colSum[i] = colSum[i] + inMatrix[j][i];
+            }
+        }
+
+        return normalizedMatrix;
+    }
+
 }
