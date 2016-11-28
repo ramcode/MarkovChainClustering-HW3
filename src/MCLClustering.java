@@ -47,13 +47,9 @@ public class MCLClustering {
             this.transitionMatrix = new double[nodeMap.size()][nodeMap.size()];
             for (int i = 0; i < rows; i++) {
                 String[] nodes = lines.get(i).split(" ");
-
             }
-
         } catch (Exception ex) {
-
         }
-
         return transitionMatrix;
     }
 
