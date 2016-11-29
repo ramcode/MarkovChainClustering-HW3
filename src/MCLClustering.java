@@ -41,7 +41,7 @@ public class MCLClustering {
         int rows = lines.size();
         int nodeId = 0;
         for (int i = 0; i < rows; i++) {
-            String[] nodes = lines.get(i).split(" ");
+            String[] nodes = lines.get(i).split("\\s+");
             if (!nodeMap.containsKey(nodes[0])) {
                 nodeMap.put(nodes[0], nodeId++);
             }
@@ -52,7 +52,7 @@ public class MCLClustering {
         //System.out.println(nodeMap);
         this.transitionMatrix = new double[nodeMap.size()][nodeMap.size()];
         for (int i = 0; i < rows; i++) {
-            String[] nodes = lines.get(i).split(" ");
+            String[] nodes = lines.get(i).split("\\s+");
             int rowIdx = nodeMap.get(nodes[0]);
             int colIdx = nodeMap.get(nodes[1]);
             transitionMatrix[rowIdx][colIdx] = 1;
