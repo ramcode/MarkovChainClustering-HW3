@@ -6,12 +6,10 @@ import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
+import java.util.Map.Entry;
 
 /**
  * Created by VenkataRamesh on 11/28/2016.
@@ -76,7 +74,9 @@ public class MCLClustering {
         }
         System.out.println("Markov Chain Clustering converged after: " + (iterations - 1) + " iterations");
         System.out.println("Analyzing clusters and generating file...");
-        generateCLUFile(transitionMatrix, fileName);
+        //generateCLUFile(transitionMatrix, fileName);
+        generateClustersAndWriteToFile(transitionMatrix, fileName);
+        //printMatrix(transitionMatrix);
     }
 
     private void addSelfLoops() {
@@ -122,6 +122,82 @@ public class MCLClustering {
             }
         }
     }
+
+    public void generateClustersAndWriteToFile(double[][] transitionMatrix, String fileName) throws Exception {
+
+        FileWriter fw = null;
+        try {
+            fw = new FileWriter(new File("output/" + fileName.split("\\.")[0] + ".clu"));
+            fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
+
+            HashMap<String, List<Integer>> clusterMap = new HashMap<String,List<Integer>>();
+            int key = 1;
+
+            for ( int i = 0; i < transitionMatrix.length; i++ ) {
+
+                StringBuilder vertices= new StringBuilder();
+                List<Integer> verticesList = new ArrayList<Integer>();
+
+                for ( int j = 0; j < transitionMatrix.length; j++ ) {
+
+                    if ( transitionMatrix[i][j] > 0 ) {
+
+                        vertices.append(String.valueOf(j));
+                        verticesList.add(j);
+
+                    }
+
+                }
+
+
+                if ( !clusterMap.containsKey(vertices) && verticesList.size() > 0 ) {
+
+                    System.out.println(vertices);
+
+                    clusterMap.put(vertices.toString(), verticesList);
+
+                }
+
+
+            }
+
+            System.out.println("Cluster Size = " + clusterMap.size());
+
+
+            Iterator<Entry<String,List<Integer>>> iter = clusterMap.entrySet().iterator();
+
+
+            while ( iter.hasNext() ) {
+
+                Entry<String, List<Integer>> pair = iter.next();
+                List<Integer> list = pair.getValue();
+                int size = list.size();
+
+
+                while ( size > 0 ) {
+
+                    fw.write(System.lineSeparator());
+                    fw.write(String.valueOf(key));
+                    size--;
+
+                }
+
+                key++;
+
+            }
+
+
+        } catch (Exception e) {
+
+            e.printStackTrace();
+
+        } finally {
+            fw.close();
+        }
+
+
+    }
+
 
 
     public void generateCLUFile(double[][] transitionMatrix, String fileName) throws Exception {
