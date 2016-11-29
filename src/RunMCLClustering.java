@@ -35,13 +35,13 @@ public class RunMCLClustering {
         else{
             fileName = "yeast_undirected_metabolic.txt";
         }
-        if (fileName == null || fileName.length() == 0) fileName = "attweb_net";
+        if (fileName == null || fileName.length() == 0) fileName = "attweb_net.txt";
         System.out.println("Enter expansion parameter, e: ");
         int e = sc.nextInt();
         System.out.println("Enter inflation parameter, r: ");
         int r = sc.nextInt();
-        String filePath = "data/"+fileName;
-        MCLClustering mcl = new MCLClustering(filePath, e, r);
-        mcl.runMCL(filePath);
+        String filePath = "data/";
+        MCLClustering mcl = new MCLClustering(fileName, e, r);
+        mcl.runMCL();
     }
 }

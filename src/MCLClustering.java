@@ -1,10 +1,16 @@
+import java.io.File;
+import java.io.FileWriter;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 
 /**
@@ -17,6 +23,7 @@ public class MCLClustering {
     private int expansionParam;
     private int inflationParam;
     private Map<String, Integer> nodeMap;
+    private static final double PRECISION = 0.000001;
 
 
     public MCLClustering(String fileName, int expansionParm, int inflationParam) throws Exception {
@@ -26,62 +33,102 @@ public class MCLClustering {
     }
 
 
-    public double[][] generateTransitionMatrix(String fileName) throws Exception {
-        Path filePath = null;
-        try {
-            filePath = Paths.get(fileName);
-            Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
-            List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
-            nodeMap = new HashMap<String, Integer>();
-            int rows = lines.size();
-            int nodeId = 0;
-            for (int i = 0; i < rows; i++) {
-                String[] nodes = lines.get(i).split(" ");
-                if (!nodeMap.containsKey(nodes[0])) {
-                    nodeMap.put(nodes[0], nodeId++);
-                }
-                if (!nodeMap.containsKey(nodes[1])) {
-                    nodeMap.put(nodes[1], nodeId++);
-                }
+    public void generateTransitionMatrix() throws Exception {
+        Path filePath = Paths.get("data/",fileName);
+        Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
+        List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+        nodeMap = new HashMap<String, Integer>();
+        int rows = lines.size();
+        int nodeId = 0;
+        for (int i = 0; i < rows; i++) {
+            String[] nodes = lines.get(i).split(" ");
+            if (!nodeMap.containsKey(nodes[0])) {
+                nodeMap.put(nodes[0], nodeId++);
             }
-            System.out.println(nodeMap);
-            this.transitionMatrix = new double[nodeMap.size()][nodeMap.size()];
-            for (int i = 0; i < rows; i++) {
-                String[] nodes = lines.get(i).split(" ");
-                int rowIdx = nodeMap.get(nodes[0]);
-                int colIdx = nodeMap.get(nodes[1]);
-                transitionMatrix[rowIdx][colIdx] = 1;
-                transitionMatrix[colIdx][rowIdx] = 1;
+            if (!nodeMap.containsKey(nodes[1])) {
+                nodeMap.put(nodes[1], nodeId++);
             }
-        } catch (Exception ex) {
         }
-        return transitionMatrix;
+        //System.out.println(nodeMap);
+        this.transitionMatrix = new double[nodeMap.size()][nodeMap.size()];
+        for (int i = 0; i < rows; i++) {
+            String[] nodes = lines.get(i).split(" ");
+            int rowIdx = nodeMap.get(nodes[0]);
+            int colIdx = nodeMap.get(nodes[1]);
+            transitionMatrix[rowIdx][colIdx] = 1;
+            transitionMatrix[colIdx][rowIdx] = 1;
+        }
     }
 
-    public void runMCL(String filePath) throws Exception {
-        generateTransitionMatrix(filePath);
 
+    public void runMCL() throws Exception {
+        generateTransitionMatrix();
+        addSelfLoops();
+        normalizeMatrix(transitionMatrix);
+        int iterations = 1;
+        while (!checkConvergernce(transitionMatrix)) {
+            System.out.println("Running MCL iteration: " + iterations);
+            double[][] expandedMatrix = expandMatrix(transitionMatrix);
+            double[][] inflatedMatrix = inflateMatrix(expandedMatrix);
+            pruneMatrix(inflatedMatrix);
+            transitionMatrix = inflatedMatrix;
+            iterations++;
+        }
+        System.out.println("Markov Chain Clustering converged after: " + (iterations - 1) + " iterations");
+        System.out.println("Analyzing clusters and generating file...");
+        generateCLUFile(transitionMatrix, fileName);
     }
 
-    private void addSelfLoops(){
-        for(int i=0; i<transitionMatrix.length;i++){
-            for(int j=0; j<transitionMatrix.length;j++){
-                if(i==j){
+    private void addSelfLoops() {
+        for (int i = 0; i < transitionMatrix.length; i++) {
+            for (int j = 0; j < transitionMatrix.length; j++) {
+                if (i == j) {
                     transitionMatrix[i][j] = 1;
                 }
             }
         }
     }
 
-    private boolean checkConvergernce(){
-        return false;
+    private boolean checkConvergernce(double[][] inputMatrix) {
+        Arrays.stream(inputMatrix).forEach(x -> {
+            Arrays.stream(x).forEach(y -> {
+                y = new BigDecimal(y).setScale(5, RoundingMode.HALF_UP).doubleValue();
+            });
+        });
+        int matLen = inputMatrix.length;
+        double[][] convergedMatrix = new double[matLen][matLen];
+        for (int i = 0; i < matLen; i++) {
+            for (int j = 0; j < matLen; j++) {
+                for (int k = 0; k < matLen; k++) {
+                    convergedMatrix[i][j] += (inputMatrix[i][k]) * (inputMatrix[k][j]);
+                }
+            }
+        }
+        Arrays.stream(convergedMatrix).forEach(x -> {
+            Arrays.stream(x).forEach(y -> {
+                y = new BigDecimal(y).setScale(5, RoundingMode.HALF_UP).doubleValue();
+            });
+        });
+        return Arrays.deepEquals(inputMatrix, convergedMatrix);
     }
 
 
-    public void generateCLUFile(double[][] transitionMatrix, String fileName) {
+    public void pruneMatrix(double[][] inputMatrix) {
+        for (int i = 0; i < inputMatrix.length; i++) {
+            for (int j = 0; j < inputMatrix.length; j++) {
+                if (inputMatrix[i][j] < PRECISION) {
+                    inputMatrix[i][j] = 0.0;
+                }
+            }
+        }
+    }
+
+
+    public void generateCLUFile(double[][] transitionMatrix, String fileName) throws Exception {
+        FileWriter fw = null;
         try {
-            Log logger = new Log(fileName);
-            logger.log("*Vertices " + String.valueOf(transitionMatrix.length));
+            fw = new FileWriter(new File("output/" + fileName + ".clu"));
+            fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
             int clusterCounter = 0;
             for (int i = 0; i < transitionMatrix.length; i++) {
                 for (int j = 0; j < transitionMatrix.length; j++) {
@@ -92,69 +139,56 @@ public class MCLClustering {
                 }
                 for (int j = 0; j < transitionMatrix.length; j++) {
                     if (transitionMatrix[i][j] != 0) {
-                        logger.log(String.valueOf(clusterCounter));
+                        fw.write(System.lineSeparator());
+                        fw.write(String.valueOf(clusterCounter));
                     }
                 }
             }
         } catch (Exception e) {
             e.printStackTrace();
+        } finally {
+            fw.close();
         }
     }
 
-    public double[][] expansion()
-    {
-        int matLen = transitionMatrix.length;
+    public double[][] expandMatrix(double[][] inputMatrix) {
+        int matLen = inputMatrix.length;
         double[][] expandedMatrix = new double[matLen][matLen];
-
-        for(int e=expansionParam; e>1; e--)
-        {
-            for(int i=0;i<matLen;i++)
-            {
-                for(int j=0;j<matLen;j++)
-                {
-                    for(int k=0;k<matLen;k++)
-                    {
-                        expandedMatrix[i][j] += (transitionMatrix[i][k])*(transitionMatrix[k][j]);
+        for (int e = expansionParam; e > 1; e--) {
+            for (int i = 0; i < matLen; i++) {
+                for (int j = 0; j < matLen; j++) {
+                    for (int k = 0; k < matLen; k++) {
+                        expandedMatrix[i][j] += (inputMatrix[i][k]) * (inputMatrix[k][j]);
                     }
                 }
             }
         }
-
         return expandedMatrix;
     }
 
 
-    public double[][] inflation()
-    {
-        int matLen = transitionMatrix.length;
+    public double[][] inflateMatrix(double[][] expandedMatrix) {
+        int matLen = expandedMatrix.length;
         double[][] inflatedMatrix = new double[matLen][matLen];
-
-        for(int i=0;i<matLen;i++)
-        {
-            for(int j=0;j<matLen;j++)
-            {
-                inflatedMatrix[i][j]= Math.pow(transitionMatrix[i][j],inflationParam);
+        for (int i = 0; i < matLen; i++) {
+            for (int j = 0; j < matLen; j++) {
+                inflatedMatrix[i][j] = Math.pow(expandedMatrix[i][j], inflationParam);
             }
         }
-
+        normalizeMatrix(inflatedMatrix);
         return inflatedMatrix;
     }
 
-    public double[][] normalize(double[][] inMatrix)
-    {
-        int matLen = inMatrix.length;
-        double[][] normalizedMatrix = new double[matLen][matLen];
-
-        double[] colSum = new double[matLen];
-        for(int i=0;i<matLen;i++)
-        {
-            for(int j=0;j<matLen;j++)
-            {
-                colSum[i] = colSum[i] + inMatrix[j][i];
+    public void normalizeMatrix(double[][] inputMatrix) {
+        for (int j = 0; j < inputMatrix.length; j++) {
+            double colSum = 0;
+            for (int i = 0; i < inputMatrix.length; i++) {
+                colSum += inputMatrix[i][j];
+            }
+            for (int i = 0; i < inputMatrix.length; i++) {
+                inputMatrix[i][j] = inputMatrix[i][j] / colSum;
             }
         }
-
-        return normalizedMatrix;
     }
 
 }
