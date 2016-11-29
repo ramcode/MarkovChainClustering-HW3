@@ -128,7 +128,7 @@ public class MCLClustering {
         FileWriter fw = null;
         try {
             System.out.println(fileName);
-            fw = new FileWriter(new File("output/" + fileName.split("\\.")[0] + ".clu"));
+            fw = new FileWriter(new File("output/" + fileName.split(".")[0] + ".clu"));
             fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
             int clusterCounter = 0;
             for (int i = 0; i < transitionMatrix.length; i++) {
