@@ -21,6 +21,7 @@ public class MCLClustering {
     private int expansionParam;
     private double inflationParam;
     private Map<String, Integer> nodeMap;
+    private Map<Integer, String > reverseMap;
     private static final int PRECISION = 5;
 
 
@@ -36,15 +37,20 @@ public class MCLClustering {
         Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
         List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
         nodeMap = new HashMap<String, Integer>();
+        reverseMap = new HashMap<Integer,String>();
         int rows = lines.size();
         int nodeId = 0;
         for (int i = 0; i < rows; i++) {
             String[] nodes = lines.get(i).split("\\s+");
             if (!nodeMap.containsKey(nodes[0])) {
-                nodeMap.put(nodes[0], nodeId++);
+                nodeMap.put(nodes[0], nodeId);
+                reverseMap.put(nodeId, nodes[0]);
+                nodeId++;
             }
             if (!nodeMap.containsKey(nodes[1])) {
-                nodeMap.put(nodes[1], nodeId++);
+                nodeMap.put(nodes[1], nodeId);
+                reverseMap.put(nodeId, nodes[1]);
+                nodeId++;
             }
         }
         //System.out.println(nodeMap);
@@ -72,7 +78,7 @@ public class MCLClustering {
             transitionMatrix = inflatedMatrix;
             iterations++;
         }
-        printMatrix(transitionMatrix);
+        //printMatrix(transitionMatrix);
         System.out.println("Markov Chain Clustering converged after: " + (iterations - 1) + " iterations");
         System.out.println("Analyzing clusters and generating file...");
         //generateCLUFile(transitionMatrix, fileName);
@@ -120,6 +126,27 @@ public class MCLClustering {
 
         FileWriter fw = null;
         try {
+
+            /*Path filePath = Paths.get("data/files_for_pajek/", fileName.split("\\.")[0] + ".net");
+            Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
+            List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
+
+            for ( String singleLine : lines ) {
+
+                if ( singleLine.contains("\"") ) {
+
+                    int startIndex = singleLine.indexOf("\"");
+                    int endIndex = singleLine.lastIndexOf("\"");
+
+                    String vertexId = singleLine.substring(startIndex, endIndex + 1);
+                    System.out.println("Vertex Id: " + vertexId);
+
+
+                }
+
+            }*/
+
+
             fw = new FileWriter(new File("output/" + fileName.split("\\.")[0] + ".clu"));
             fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
 
@@ -167,15 +194,12 @@ public class MCLClustering {
                 int size = list.size();
 
 
-                while (size > 0) {
+                for ( Integer uniqueVertexId : list ) {
 
                     fw.write(System.lineSeparator());
-                    fw.write(String.valueOf(key));
-                    size--;
+                    fw.write(reverseMap.get(uniqueVertexId));
 
                 }
-
-                key++;
 
             }
 
