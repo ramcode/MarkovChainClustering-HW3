@@ -21,7 +21,7 @@ public class MCLClustering {
     private int expansionParam;
     private int inflationParam;
     private Map<String, Integer> nodeMap;
-    private static final double PRECISION = 0.000001;
+    private static final int PRECISION = 5;
 
 
     public MCLClustering(String fileName, int expansionParm, int inflationParam) throws Exception {
@@ -32,7 +32,7 @@ public class MCLClustering {
 
 
     public void generateTransitionMatrix() throws Exception {
-        Path filePath = Paths.get("data/",fileName);
+        Path filePath = Paths.get("data/", fileName);
         Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
         List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
         nodeMap = new HashMap<String, Integer>();
@@ -72,6 +72,7 @@ public class MCLClustering {
             transitionMatrix = inflatedMatrix;
             iterations++;
         }
+        printMatrix(transitionMatrix);
         System.out.println("Markov Chain Clustering converged after: " + (iterations - 1) + " iterations");
         System.out.println("Analyzing clusters and generating file...");
         //generateCLUFile(transitionMatrix, fileName);
@@ -90,33 +91,25 @@ public class MCLClustering {
     }
 
     private boolean checkConvergernce(double[][] inputMatrix) {
-        Arrays.stream(inputMatrix).forEach(x -> {
-            Arrays.stream(x).forEach(y -> {
-                y = new BigDecimal(y).setScale(5, RoundingMode.HALF_UP).doubleValue();
-            });
-        });
-        int matLen = inputMatrix.length;
-        double[][] convergedMatrix = new double[matLen][matLen];
-        for (int i = 0; i < matLen; i++) {
-            for (int j = 0; j < matLen; j++) {
-                for (int k = 0; k < matLen; k++) {
-                    convergedMatrix[i][j] += (inputMatrix[i][k]) * (inputMatrix[k][j]);
-                }
+        for (int i = 0; i < inputMatrix.length; i++) {
+            for (int j = 0; j < inputMatrix.length; j++) {
+                inputMatrix[i][j] = new BigDecimal(inputMatrix[i][j]).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
             }
         }
-        Arrays.stream(convergedMatrix).forEach(x -> {
-            Arrays.stream(x).forEach(y -> {
-                y = new BigDecimal(y).setScale(5, RoundingMode.HALF_UP).doubleValue();
-            });
-        });
+        int matLen = inputMatrix.length;
+        double[][] convergedMatrix = multiplyMatrices(inputMatrix, inputMatrix);
+        for (int i = 0; i < convergedMatrix.length; i++) {
+            for (int j = 0; j < inputMatrix.length; j++) {
+                convergedMatrix[i][j] = new BigDecimal(convergedMatrix[i][j]).setScale(PRECISION, RoundingMode.HALF_UP).doubleValue();
+            }
+        }
         return Arrays.deepEquals(inputMatrix, convergedMatrix);
     }
-
 
     public void pruneMatrix(double[][] inputMatrix) {
         for (int i = 0; i < inputMatrix.length; i++) {
             for (int j = 0; j < inputMatrix.length; j++) {
-                if (inputMatrix[i][j] < PRECISION) {
+                if (inputMatrix[i][j] < Math.pow(10, -PRECISION)) {
                     inputMatrix[i][j] = 0.0;
                 }
             }
@@ -130,17 +123,17 @@ public class MCLClustering {
             fw = new FileWriter(new File("output/" + fileName.split("\\.")[0] + ".clu"));
             fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
 
-            HashMap<String, List<Integer>> clusterMap = new HashMap<String,List<Integer>>();
+            HashMap<String, List<Integer>> clusterMap = new HashMap<String, List<Integer>>();
             int key = 1;
 
-            for ( int i = 0; i < transitionMatrix.length; i++ ) {
+            for (int i = 0; i < transitionMatrix.length; i++) {
 
-                StringBuilder vertices= new StringBuilder();
+                StringBuilder vertices = new StringBuilder();
                 List<Integer> verticesList = new ArrayList<Integer>();
 
-                for ( int j = 0; j < transitionMatrix.length; j++ ) {
+                for (int j = 0; j < transitionMatrix.length; j++) {
 
-                    if ( transitionMatrix[i][j] > 0 ) {
+                    if (transitionMatrix[i][j] > 0) {
 
                         vertices.append(String.valueOf(j));
                         verticesList.add(j);
@@ -150,7 +143,7 @@ public class MCLClustering {
                 }
 
 
-                if ( !clusterMap.containsKey(vertices) && verticesList.size() > 0 ) {
+                if (!clusterMap.containsKey(vertices) && verticesList.size() > 0) {
 
                     System.out.println(vertices);
 
@@ -164,17 +157,17 @@ public class MCLClustering {
             System.out.println("Cluster Size = " + clusterMap.size());
 
 
-            Iterator<Entry<String,List<Integer>>> iter = clusterMap.entrySet().iterator();
+            Iterator<Entry<String, List<Integer>>> iter = clusterMap.entrySet().iterator();
 
 
-            while ( iter.hasNext() ) {
+            while (iter.hasNext()) {
 
                 Entry<String, List<Integer>> pair = iter.next();
                 List<Integer> list = pair.getValue();
                 int size = list.size();
 
 
-                while ( size > 0 ) {
+                while (size > 0) {
 
                     fw.write(System.lineSeparator());
                     fw.write(String.valueOf(key));
@@ -197,7 +190,6 @@ public class MCLClustering {
 
 
     }
-
 
 
     public void generateCLUFile(double[][] transitionMatrix, String fileName) throws Exception {
@@ -229,43 +221,29 @@ public class MCLClustering {
 
     public double[][] expandMatrix(double[][] inputMatrix) {
         int matLen = inputMatrix.length;
-        double[][] expandedMatrix = new double[matLen][matLen];
-        int e = expansionParam;
-
-        if(e>1)
-        {
-            for(int i=0;i<matLen;i++)
-            {
-                for(int j=0;j<matLen;j++)
-                {
-                    for(int k=0;k<matLen;k++)
-                    {
-                        expandedMatrix[i][j] += (transitionMatrix[i][k])*(transitionMatrix[k][j]);
-                    }
-                }
-            }
-            if(e==2)
-            {
-                return expandedMatrix;
+        double[][] expandedMatrix = new double[inputMatrix.length][inputMatrix.length];
+        for (int i = 0; i < matLen; i++) {
+            for (int j = 0; j < matLen; j++) {
+                expandedMatrix[i][j] = inputMatrix[i][j];
             }
         }
-
-        for(int x = e;x>2;x--)
-        {
-            double[][] interimMatrix = new double[matLen][matLen];
-            for(int i=0;i<matLen;i++)
-            {
-                for(int j=0;j<matLen;j++)
-                {
-                    for(int k=0;k<matLen;k++)
-                    {
-                        interimMatrix[i][j] += (expandedMatrix[i][k])*(transitionMatrix[k][j]);
-                    }
-                }
-            }
-            expandedMatrix = interimMatrix;
+        for (int i = 1; i < expansionParam; i++) {
+            expandedMatrix = multiplyMatrices(expandedMatrix, inputMatrix);
         }
         return expandedMatrix;
+    }
+
+    public double[][] multiplyMatrices(double[][] mat1, double[][] mat2) {
+        double[][] newMat = new double[mat1.length][mat1.length];
+        int matLen = newMat.length;
+        for (int i = 0; i < matLen; i++) {
+            for (int j = 0; j < matLen; j++) {
+                for (int l = 0; l < matLen; l++) {
+                    newMat[i][j] += (mat1[i][l]) * (mat2[l][j]);
+                }
+            }
+        }
+        return newMat;
     }
 
 
@@ -293,14 +271,11 @@ public class MCLClustering {
         }
     }
 
-    public void printMatrix(double[][] inMatrix)
-    {
+    public void printMatrix(double[][] inMatrix) {
         int matLen = inMatrix.length;
-        for(int i=0;i<matLen;i++)
-        {
-            for(int j=0;j<matLen;j++)
-            {
-                System.out.print(inMatrix[i][j]+" ");
+        for (int i = 0; i < matLen; i++) {
+            for (int j = 0; j < matLen; j++) {
+                System.out.print(inMatrix[i][j] + " ");
             }
             System.out.println("\n");
         }
