@@ -154,14 +154,40 @@ public class MCLClustering {
     public double[][] expandMatrix(double[][] inputMatrix) {
         int matLen = inputMatrix.length;
         double[][] expandedMatrix = new double[matLen][matLen];
-        for (int e = expansionParam; e > 1; e--) {
-            for (int i = 0; i < matLen; i++) {
-                for (int j = 0; j < matLen; j++) {
-                    for (int k = 0; k < matLen; k++) {
-                        expandedMatrix[i][j] += (inputMatrix[i][k]) * (inputMatrix[k][j]);
+        int e = expansionParam;
+
+        if(e>1)
+        {
+            for(int i=0;i<matLen;i++)
+            {
+                for(int j=0;j<matLen;j++)
+                {
+                    for(int k=0;k<matLen;k++)
+                    {
+                        expandedMatrix[i][j] += (transitionMatrix[i][k])*(transitionMatrix[k][j]);
                     }
                 }
             }
+            if(e==2)
+            {
+                return expandedMatrix;
+            }
+        }
+
+        for(int x = e;x>2;x--)
+        {
+            double[][] interimMatrix = new double[matLen][matLen];
+            for(int i=0;i<matLen;i++)
+            {
+                for(int j=0;j<matLen;j++)
+                {
+                    for(int k=0;k<matLen;k++)
+                    {
+                        interimMatrix[i][j] += (expandedMatrix[i][k])*(transitionMatrix[k][j]);
+                    }
+                }
+            }
+            expandedMatrix = interimMatrix;
         }
         return expandedMatrix;
     }
@@ -191,5 +217,17 @@ public class MCLClustering {
         }
     }
 
+    public void printMatrix(double[][] inMatrix)
+    {
+        int matLen = inMatrix.length;
+        for(int i=0;i<matLen;i++)
+        {
+            for(int j=0;j<matLen;j++)
+            {
+                System.out.print(inMatrix[i][j]+" ");
+            }
+            System.out.println("\n");
+        }
+    }
 }
 
