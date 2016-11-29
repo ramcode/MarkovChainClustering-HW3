@@ -19,12 +19,12 @@ public class MCLClustering {
     private String fileName;
     private double[][] transitionMatrix;
     private int expansionParam;
-    private int inflationParam;
+    private double inflationParam;
     private Map<String, Integer> nodeMap;
     private static final int PRECISION = 5;
 
 
-    public MCLClustering(String fileName, int expansionParm, int inflationParam) throws Exception {
+    public MCLClustering(String fileName, int expansionParm, double inflationParam) throws Exception {
         this.fileName = fileName;
         this.expansionParam = expansionParm;
         this.inflationParam = inflationParam;
@@ -145,7 +145,7 @@ public class MCLClustering {
 
                 if (!clusterMap.containsKey(vertices) && verticesList.size() > 0) {
 
-                    System.out.println(vertices);
+                    //System.out.println(vertices);
 
                     clusterMap.put(vertices.toString(), verticesList);
 
@@ -154,7 +154,7 @@ public class MCLClustering {
 
             }
 
-            System.out.println("Cluster Size = " + clusterMap.size());
+            System.out.println("No. of Clusters generated: " + clusterMap.size());
 
 
             Iterator<Entry<String, List<Integer>>> iter = clusterMap.entrySet().iterator();

@@ -39,7 +39,7 @@ public class RunMCLClustering {
         System.out.println("Enter expansion parameter, e: ");
         int e = sc.nextInt();
         System.out.println("Enter inflation parameter, r: ");
-        int r = sc.nextInt();
+        double r = sc.nextDouble();
         String filePath = "data/";
         MCLClustering mcl = new MCLClustering(fileName, e, r);
         mcl.runMCL();
