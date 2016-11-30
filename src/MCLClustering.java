@@ -7,6 +7,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.*;
+import java.util.stream.Collectors;
 import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 import java.util.Map.Entry;
@@ -21,7 +22,7 @@ public class MCLClustering {
     private int expansionParam;
     private double inflationParam;
     private Map<String, Integer> nodeMap;
-    private Map<Integer, String > reverseMap;
+    private Map<Integer, String> reverseMap;
     private static final int PRECISION = 5;
 
 
@@ -37,7 +38,7 @@ public class MCLClustering {
         Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
         List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
         nodeMap = new HashMap<String, Integer>();
-        reverseMap = new HashMap<Integer,String>();
+        reverseMap = new HashMap<Integer, String>();
         int rows = lines.size();
         int nodeId = 0;
         for (int i = 0; i < rows; i++) {
@@ -123,70 +124,51 @@ public class MCLClustering {
     }
 
     public void generateClustersAndWriteToFile(double[][] transitionMatrix, String fileName) throws Exception {
-
         FileWriter fw = null;
         try {
-
-
             fw = new FileWriter(new File("output/" + fileName.split("\\.")[0] + ".clu"));
             fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
-
             HashMap<String, Integer> clusterMap = new HashMap<String, Integer>();
-            int key = 1;
-            int clusterID = 0;
-
+            List<String> clusterList = new ArrayList<String>();
+            int clusterId = 0;
             for (int i = 0; i < transitionMatrix.length; i++) {
-
-                StringBuilder vertices = new StringBuilder();
                 List<Integer> verticesList = new ArrayList<Integer>();
-
                 for (int j = 0; j < transitionMatrix.length; j++) {
-
                     if (transitionMatrix[i][j] > 0) {
-
-                        vertices.append(String.valueOf(j));
                         verticesList.add(j);
-
                     }
+                }
+                if (verticesList.size() > 0) {
+                    String vertexIds = verticesList.stream().map(x -> x.toString()).collect(Collectors.joining());
+                    System.out.println(vertexIds);
 
                 }
-                if(verticesList.size()>0)
-                {
-                    clusterID++;
-                    for(Integer index : verticesList)
-                    {
-                        //if(!clusterMap.containsKey(reverseMap.get(index)))
-                        {
-                            clusterMap.put(reverseMap.get(index),clusterID);
+                if (verticesList.size() > 0) {
+                    String vertexIds = verticesList.stream().map(x -> x.toString()).collect(Collectors.joining());
+                    if (!clusterList.contains(vertexIds)) {
+                        clusterList.add(vertexIds);
+                        clusterId++;
+                        for (Integer index : verticesList) {
+                            if (!clusterMap.containsKey(reverseMap.get(index))) {
+                                clusterMap.put(reverseMap.get(index), clusterId);
+                            }
                         }
                     }
                 }
             }
-
-            System.out.println("No. of Clusters generated: " + clusterID);
-
+            System.out.println("No. of Clusters generated: " + clusterId);
             Path filePath = Paths.get("data/files_for_pajek/", fileName.split("\\.")[0] + ".net");
             Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
             List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
-
-            for ( String singleLine : lines ) {
-
-                if ( singleLine.contains("\"") ) {
-
+            for (String singleLine : lines) {
+                if (singleLine.contains("\"")) {
                     int startIndex = singleLine.indexOf("\"");
                     int endIndex = singleLine.lastIndexOf("\"");
-
-                    String vertexId = singleLine.substring(startIndex+1, endIndex);
-                    //System.out.println("Vertex Id: " + vertexId);
-
+                    String vertexId = singleLine.substring(startIndex + 1, endIndex);
                     fw.write(System.lineSeparator());
                     fw.write(clusterMap.get(vertexId).toString());
-
                 }
-
             }
-
-
         } catch (Exception e) {
 
             e.printStackTrace();
@@ -196,34 +178,6 @@ public class MCLClustering {
         }
 
 
-    }
-
-
-    public void generateCLUFile(double[][] transitionMatrix, String fileName) throws Exception {
-        FileWriter fw = null;
-        try {
-            fw = new FileWriter(new File("output/" + fileName.split("\\.")[0] + ".clu"));
-            fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
-            int clusterCounter = 0;
-            for (int i = 0; i < transitionMatrix.length; i++) {
-                for (int j = 0; j < transitionMatrix.length; j++) {
-                    if (transitionMatrix[i][j] != 0) {
-                        clusterCounter++;
-                        break;
-                    }
-                }
-                for (int j = 0; j < transitionMatrix.length; j++) {
-                    if (transitionMatrix[i][j] != 0) {
-                        fw.write(System.lineSeparator());
-                        fw.write(String.valueOf(clusterCounter));
-                    }
-                }
-            }
-        } catch (Exception e) {
-            e.printStackTrace();
-        } finally {
-            fw.close();
-        }
     }
 
     public double[][] expandMatrix(double[][] inputMatrix) {
