@@ -140,11 +140,6 @@ public class MCLClustering {
                 }
                 if (verticesList.size() > 0) {
                     String vertexIds = verticesList.stream().map(x -> x.toString()).collect(Collectors.joining());
-                    System.out.println(vertexIds);
-
-                }
-                if (verticesList.size() > 0) {
-                    String vertexIds = verticesList.stream().map(x -> x.toString()).collect(Collectors.joining());
                     if (!clusterList.contains(vertexIds)) {
                         clusterList.add(vertexIds);
                         clusterId++;
