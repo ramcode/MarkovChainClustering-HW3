@@ -127,31 +127,13 @@ public class MCLClustering {
         FileWriter fw = null;
         try {
 
-            /*Path filePath = Paths.get("data/files_for_pajek/", fileName.split("\\.")[0] + ".net");
-            Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
-            List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
-
-            for ( String singleLine : lines ) {
-
-                if ( singleLine.contains("\"") ) {
-
-                    int startIndex = singleLine.indexOf("\"");
-                    int endIndex = singleLine.lastIndexOf("\"");
-
-                    String vertexId = singleLine.substring(startIndex, endIndex + 1);
-                    System.out.println("Vertex Id: " + vertexId);
-
-
-                }
-
-            }*/
-
 
             fw = new FileWriter(new File("output/" + fileName.split("\\.")[0] + ".clu"));
             fw.write("*Vertices " + String.valueOf(transitionMatrix.length));
 
-            HashMap<String, List<Integer>> clusterMap = new HashMap<String, List<Integer>>();
+            HashMap<String, Integer> clusterMap = new HashMap<String, Integer>();
             int key = 1;
+            int clusterID = 0;
 
             for (int i = 0; i < transitionMatrix.length; i++) {
 
@@ -168,36 +150,37 @@ public class MCLClustering {
                     }
 
                 }
-
-
-                if (!clusterMap.containsKey(vertices) && verticesList.size() > 0) {
-
-                    //System.out.println(vertices);
-
-                    clusterMap.put(vertices.toString(), verticesList);
-
+                if(verticesList.size()>0)
+                {
+                    clusterID++;
+                    for(Integer index : verticesList)
+                    {
+                        //if(!clusterMap.containsKey(reverseMap.get(index)))
+                        {
+                            clusterMap.put(reverseMap.get(index),clusterID);
+                        }
+                    }
                 }
-
-
             }
 
-            System.out.println("No. of Clusters generated: " + clusterMap.size());
+            System.out.println("No. of Clusters generated: " + clusterID);
 
+            Path filePath = Paths.get("data/files_for_pajek/", fileName.split("\\.")[0] + ".net");
+            Stream<String> rowList = Files.lines(filePath, StandardCharsets.UTF_8);
+            List<String> lines = Files.readAllLines(filePath, StandardCharsets.UTF_8);
 
-            Iterator<Entry<String, List<Integer>>> iter = clusterMap.entrySet().iterator();
+            for ( String singleLine : lines ) {
 
+                if ( singleLine.contains("\"") ) {
 
-            while (iter.hasNext()) {
+                    int startIndex = singleLine.indexOf("\"");
+                    int endIndex = singleLine.lastIndexOf("\"");
 
-                Entry<String, List<Integer>> pair = iter.next();
-                List<Integer> list = pair.getValue();
-                int size = list.size();
-
-
-                for ( Integer uniqueVertexId : list ) {
+                    String vertexId = singleLine.substring(startIndex+1, endIndex);
+                    //System.out.println("Vertex Id: " + vertexId);
 
                     fw.write(System.lineSeparator());
-                    fw.write(reverseMap.get(uniqueVertexId));
+                    fw.write(clusterMap.get(vertexId).toString());
 
                 }
 
